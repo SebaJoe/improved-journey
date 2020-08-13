@@ -9,7 +9,7 @@ using namespace std;
 
 //these are all the matrix functions that are used for transform
 float sigmoid(float z){
-    return 1/(1+exp(z));
+    return 1/(1+exp(-1*z));
 }
 
 float square(float z){
@@ -89,11 +89,11 @@ class Neural_Net{
             matrix yHat = propagate(X);
             //cout << "Breakpoint 1:" << endl;
             //cout << y.getRow() << " " << y.getCol() << " " << z3.getRow() << " " << z3.getCol() << endl;
-            matrix delta3 = y.add(yHat.multiply(-1)).multiply(-2).hadamard(z3.transform(activationPrime));
+            matrix delta3 = y.add(yHat.multiply(-1)).multiply(2).hadamard(z3.transform(activationPrime));
             //cout << "Breakpoint 2:" << endl;
             matrix dCdW2 =  a2.transpose().multiply(delta3);
             //cout << "Breakpoint 3:" << endl;
-            matrix delta2 = delta3.multiply(W2.transpose().multiply(z2.transform(activationPrime)));
+            matrix delta2 = delta3.multiply(W2.transpose()).hadamard(z2.transform(activationPrime));
             //cout << "Breakpoint 4:" << endl;
             matrix dCdW1 = X.transpose().multiply(delta2);
             //cout << "Breakpoint 5:" << endl;
@@ -101,77 +101,15 @@ class Neural_Net{
         }
         //I guess the gradient decsent will be based on a sort of BFGS algorithm, as I got it from
         //the wikipedia page (more info here: https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm).
-        float train(matrix X, matrix y, int upperBound) {
-            costPrime(X, y);
-            float minCost = 100000;
-            matrix best_W1;
-            //cout << "W1:" << endl;
-            //W1.print();
-            //cout << "dC/dW1:" << endl;
-            //gradients[0].print();
-            //cout << "W2:" << endl;
-            //W2.print();
-            //cout << "dC/dW2" << endl;
-            //gradients[1].print();
-            //matrix test = W1.add(gradients[0].multiply(-1));
-            matrix best_W2;
-            matrix temp_W1;
-            temp_W1.copy(W1);
-            matrix temp_W2;
-            temp_W2.copy(W2);
+        float train(matrix X, matrix y, float rounds) {
             W1.print();
             W2.print();
-            int counter = 0;
-            int best_scalar = 0;
-            for(int scalar = 0; scalar < upperBound; scalar++){
-                //temp_W1.print();
-                //temp_W2.print();
-                W1.copy(temp_W1);
-                W2.copy(temp_W2);
-                //W1.print();
-                //W2.print();
-                W1 = W1.add(gradients[0].multiply(-1*scalar));
-                W2 = W2.add(gradients[1].multiply(-1*scalar));
-                float cur_cost = cost(X, y);
-                //cout << minCost << endl;
-                //cout << "cur_cost: " << cur_cost << endl;
-                if(scalar == upperBound - 1){
-                    cout << "Last cost: " <<  cur_cost << endl;
-                    cout << "gradient 1: " << endl;
-                    gradients[0].print();
-                    cout << "gradient 2: " << endl;
-                    gradients[1].print();
-                }
-                if(cur_cost < minCost){
-                    //cout << counter << ": " << scalar << ": " << cur_cost << endl;
-                    best_W1.copy(W1);
-                    best_W2.copy(W2);
-                    minCost = cur_cost;
-                    best_scalar = scalar;
-                    counter++;
-                }
-                //W1.print();
-                //W2.print();
+            for(int i = 0; i < rounds; i++){
+                costPrime(X, y);
+                W1 = W1.add(gradients[0]);
+                W2 = W2.add(gradients[1]);
             }
-            W1 = best_W1;
-            W2 = best_W2;
-            cout << "Best Scalar: " << best_scalar << endl;
-            W1.print();
-            W2.print();
-            return minCost;
-            /*
-            int scalar = 2;
-            cout << "Initial W1: " << endl;
-            W1.print();
-            cout << "Initial W2: " << endl; 
-            W2.print();
-            W1 = W1.add(gradients[0].multiply(-1*scalar));
-            W2 = W2.add(gradients[1].multiply(-1*scalar));
-            cout << "Trained W1: " << endl;
-            W1.print();
-            cout << "Trained W2: " << endl;
-            W2.print();
-            return cost(X, y);*/
+            return cost(X, y);
         }
 
     private:
@@ -244,17 +182,28 @@ int main() {
     cout << "Y_vals:" << endl;
     y_vals.print();
     //x_vals.print();
+    matrix sigs = x_vals.transform(sigmoid);
+    matrix test_1 = x_vals.transform(sigmoidPrime);
+    cout << "sigmoidPrime through transform" << endl;
+    test_1.print();
+    matrix ones(sigs.getRow(), sigs.getCol(), 1);
+    matrix test_2 = sigs.hadamard(ones.add(sigs.multiply(-1)));
+    cout << "sigmoidPrime through rho(1-rho)" << endl;
+    test_2.print();
+    
     matrix output = n1.propagate(x_vals);
     cout << "Output: " << endl;
     output.print();
-    float initialCost = n1.cost(x_vals, y_vals);
-    cout << "Initial Cost: " << initialCost << endl;
+    //float initialCost = n1.cost(x_vals, y_vals);
     //n1.costPrime(x_vals, y_vals);
-    float finalCost;
-    //for(int i = 0; i < 200; i++)
-        finalCost = n1.train(x_vals, y_vals, 100000);
-    cout << "The final cost: " << finalCost << endl;
+    for(int i = 0; i < 4; i++){
+    float initialCost = n1.cost(x_vals, y_vals);
+    float finalCost = n1.train(x_vals, y_vals, 60000);
+    cout << "Initial Cost: " << initialCost <<  " The final cost: " << finalCost << endl;
+    cout << "Cost decreased by: " << initialCost - finalCost << endl;
     output = n1.propagate(x_vals);
     cout << "Trained Output: " << endl;
     output.print();
+    }
+    
 }

@@ -11,6 +11,7 @@ void matrix::randomFill(){
     for(int i = 0; i < getRow(); i++){
         for(int j = 0; j < getCol(); j++){
             float val = (float) rand()/RAND_MAX;
+            val = val*2 - 1;
             set(i, j, val);
         }
     }

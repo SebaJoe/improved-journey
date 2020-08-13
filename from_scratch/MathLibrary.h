@@ -15,9 +15,22 @@ namespace MathLibrary{
             matrix(int x, int y){
                 create(x, y);
             }
+            matrix(int x, int y, float num){
+                create(x, y, num);
+            }
             void create(int x, int y){
                 row = x;
                 col = y;
+            }
+
+            void create(int x, int y, float num){
+                row = x;
+                col = y;
+                for(int i = 0; i < row; i++){
+                    for(int j = 0; j < col; j++){
+                        mat[i][j] = num;
+                    }
+                }
             }
 
             void inputs(float ar[]){
